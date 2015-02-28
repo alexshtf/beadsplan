@@ -45,25 +45,44 @@ void MainWindow::GeneratePlan()
     using SiteID = GCoptimization::SiteID;
     using LabelID = GCoptimization::LabelID ;
 
-    GCoptimizationGridGraph gridGraph(
-        static_cast<SiteID>(_image.width()),
-        static_cast<SiteID>(_image.height()),
-        static_cast<LabelID>(_colorCatalog.size())
-    );
+    try
+    {
+        GCoptimizationGridGraph gridGraph(
+            static_cast<SiteID>(_image.width()),
+            static_cast<SiteID>(_image.height()),
+            static_cast<LabelID>(_colorCatalog.size())
+        );
 
-    gridGraph.setDataCost([] (SiteID s1, LabelID label, void* extra) {
-        auto& image =  reinterpret_cast<MainWindow*>(extra)->_image;
-        auto& catalog = reinterpret_cast<MainWindow*>(extra)->_colorCatalog;
+        gridGraph.setDataCost([] (SiteID s1, LabelID label, void* extra) {
+            auto& image =  reinterpret_cast<MainWindow*>(extra)->_image;
+            auto& catalog = reinterpret_cast<MainWindow*>(extra)->_colorCatalog;
 
-        auto width = static_cast<SiteID>(image.width());
-        auto x = s1 % width;
-        auto y = (s1 - x) / width;
+            auto width = static_cast<SiteID>(image.width());
+            auto x = s1 % width;
+            auto y = (s1 - x) / width;
 
-        auto imgColor = QColor::fromRgb(image.pixel(x, y));
-        auto catalogColor = catalog.entryAt(static_cast<size_t>(label));
+            auto imgColor = QColor::fromRgb(image.pixel(x, y));
+            auto catalogColor = catalog.entryAt(static_cast<size_t>(label));
 
-        return ColorDiff(imgColor, catalogColor);
-    }, this);
+            return ColorDiff(imgColor, catalogColor);
+        }, this);
 
-    gridGraph.expansion();
+        gridGraph.expansion(10);
+
+        for(SiteID x = 0; x < _image.width(); ++x)
+        {
+            for(SiteID y = 0; y < _image.height(); ++y)
+            {
+                auto id = y * _image.width() + x;
+                auto label = gridGraph.whatLabel(id);
+                auto color = _colorCatalog.entryAt(static_cast<size_t>(label));
+                _image.setPixel(x, y, qRgb(color.r, color.g, color.b));
+            }
+        }
+        _ui.imageLabel->setPixmap(QPixmap::fromImage(_image));
+    }
+    catch(const GCException& e)
+    {
+        QMessageBox::warning(this, tr("Unable to compute plan"), e.message);
+    }
 }

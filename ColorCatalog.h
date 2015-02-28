@@ -24,8 +24,8 @@ public:
         : _entries { {"red", 255, 0, 0}, {"green", 0, 255, 0}, {"blue", 0, 0, 255} }
     {}
 
-    size_t size() { _entries.size(); }
-    Entry& entryAt(size_t index) { return _entries.at(index); }
+    size_t size() { return _entries.size(); }
+    Entry& entryAt(size_t index) { return _entries[index]; }
 
 private:
     std::vector<Entry> _entries;

@@ -4,6 +4,9 @@
     <content url="file://$USER_HOME$/.clion10/system/cmake/generated/168ea010/168ea010/Debug/beadsplan_automoc.cpp">
       <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/168ea010/168ea010/Debug/beadsplan_automoc.cpp" isTestSource="false" />
     </content>
+    <content url="file://$USER_HOME$/.clion10/system/cmake/generated/168ea010/168ea010/Release/beadsplan_automoc.cpp">
+      <sourceFolder url="file://$USER_HOME$/.clion10/system/cmake/generated/168ea010/168ea010/Release/beadsplan_automoc.cpp" isTestSource="false" />
+    </content>
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
