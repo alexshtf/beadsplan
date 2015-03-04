@@ -3,6 +3,7 @@
 
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/qmessagebox.h>
+#include <memory>
 
 namespace
 {
@@ -14,7 +15,7 @@ namespace
         auto dG = (left.green() - right.g);
         auto dB = (left.blue() - right.b);
 
-        return sqrt(sqr(dR) + sqr(dG) + sqr(dB)) / 255;
+        return sqrt(sqr(dR) + sqr(dG) + sqr(dB)) / 16;
     }
 }
 
@@ -53,21 +54,23 @@ void MainWindow::GeneratePlan()
             static_cast<LabelID>(_colorCatalog.size())
         );
 
-        gridGraph.setDataCost([] (SiteID s1, LabelID label, void* extra) {
-            auto& image =  reinterpret_cast<MainWindow*>(extra)->_image;
-            auto& catalog = reinterpret_cast<MainWindow*>(extra)->_colorCatalog;
+        std::unique_ptr<double[]> dataCost(new double[gridGraph.numSites() * gridGraph.numLabels()]);
+        for(SiteID x = 0; x < _image.width(); ++x)
+        {
+            for(SiteID y = 0; y < _image.height(); ++y)
+            {
+                auto imgColor = QColor::fromRgb(_image.pixel(x, y));
+                auto siteId = y * _image.width() + x;
+                for(LabelID l = 0; l < gridGraph.numLabels(); ++l)
+                {
+                    auto& catalogColor = _colorCatalog.entryAt(static_cast<size_t>(l));
+                    dataCost[siteId * gridGraph.numLabels() + l] = ColorDiff(imgColor, catalogColor);
+                }
+            }
+        }
 
-            auto width = static_cast<SiteID>(image.width());
-            auto x = s1 % width;
-            auto y = (s1 - x) / width;
-
-            auto imgColor = QColor::fromRgb(image.pixel(x, y));
-            auto catalogColor = catalog.entryAt(static_cast<size_t>(label));
-
-            return ColorDiff(imgColor, catalogColor);
-        }, this);
-
-        gridGraph.expansion(10);
+        gridGraph.setDataCost(dataCost.get());
+        gridGraph.expansion();
 
         for(SiteID x = 0; x < _image.width(); ++x)
         {
