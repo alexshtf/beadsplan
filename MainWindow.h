@@ -4,6 +4,7 @@
 #include <QtGui/QImage>
 #include "ui_MainWindow.h"
 #include "ColorCatalog.h"
+#include <memory>
 
 class MainWindow : public QMainWindow
 {
@@ -17,6 +18,8 @@ private:
     ColorCatalog _colorCatalog;
 
     void GeneratePlan();
-
     void LoadImage();
+    std::unique_ptr<double[]> getDataCost();
+
+    void updatePlan(const class GCoptimizationGridGraph & gridGraph);
 };

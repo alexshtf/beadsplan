@@ -239,7 +239,7 @@ public:
 	void setLabelSubsetCost(LabelID* labels, LabelID numLabels, EnergyTermType cost);
 
 	// Returns current label assigned to input site 
-	LabelID whatLabel(SiteID site);
+	LabelID whatLabel(SiteID site) const;
 	void    whatLabel(SiteID start, SiteID count, LabelID* labeling);
 
 	// This function can be used to change the label of any site at any time      
@@ -619,7 +619,7 @@ OLGA_INLINE void GCoptimization::setLabel(SiteID site, LabelID label)
 	m_labelingInfoDirty = true;
 }
 
-OLGA_INLINE GCoptimization::LabelID GCoptimization::whatLabel(SiteID site)
+OLGA_INLINE GCoptimization::LabelID GCoptimization::whatLabel(SiteID site) const
 {
 	assert(site >= 0 && site < m_num_sites);
 	return m_labeling[site];

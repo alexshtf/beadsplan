@@ -3,7 +3,6 @@
 
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/qmessagebox.h>
-#include <memory>
 
 namespace
 {
@@ -17,7 +16,11 @@ namespace
 
         return sqrt(sqr(dR) + sqr(dG) + sqr(dB)) / 16;
     }
+
+    using SiteID = GCoptimization::SiteID;
+    using LabelID = GCoptimization::LabelID ;
 }
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -43,9 +46,6 @@ void MainWindow::LoadImage()
 
 void MainWindow::GeneratePlan()
 {
-    using SiteID = GCoptimization::SiteID;
-    using LabelID = GCoptimization::LabelID ;
-
     try
     {
         GCoptimizationGridGraph gridGraph(
@@ -54,25 +54,20 @@ void MainWindow::GeneratePlan()
             static_cast<LabelID>(_colorCatalog.size())
         );
 
-        std::unique_ptr<double[]> dataCost(new double[gridGraph.numSites() * gridGraph.numLabels()]);
-        for(SiteID x = 0; x < _image.width(); ++x)
-        {
-            for(SiteID y = 0; y < _image.height(); ++y)
-            {
-                auto imgColor = QColor::fromRgb(_image.pixel(x, y));
-                auto siteId = y * _image.width() + x;
-                for(LabelID l = 0; l < gridGraph.numLabels(); ++l)
-                {
-                    auto& catalogColor = _colorCatalog.entryAt(static_cast<size_t>(l));
-                    dataCost[siteId * gridGraph.numLabels() + l] = ColorDiff(imgColor, catalogColor);
-                }
-            }
-        }
-
+        auto dataCost = getDataCost();
         gridGraph.setDataCost(dataCost.get());
         gridGraph.expansion();
+        updatePlan(gridGraph);
+    }
+    catch(const GCException& e)
+    {
+        QMessageBox::warning(this, tr("Unable to compute plan"), e.message);
+    }
+}
 
-        for(SiteID x = 0; x < _image.width(); ++x)
+void MainWindow::updatePlan(const GCoptimizationGridGraph &gridGraph)
+{
+    for(SiteID x = 0; x < _image.width(); ++x)
         {
             for(SiteID y = 0; y < _image.height(); ++y)
             {
@@ -82,10 +77,24 @@ void MainWindow::GeneratePlan()
                 _image.setPixel(x, y, qRgb(color.r, color.g, color.b));
             }
         }
-        _ui.imageLabel->setPixmap(QPixmap::fromImage(_image));
-    }
-    catch(const GCException& e)
-    {
-        QMessageBox::warning(this, tr("Unable to compute plan"), e.message);
-    }
+    _ui.imageLabel->setPixmap(QPixmap::fromImage(_image));
+}
+
+std::unique_ptr<double[]> MainWindow::getDataCost()
+{
+    std::unique_ptr<double[]> dataCost(new double[_image.width() * _image.height() * _colorCatalog.size()]);
+    for(SiteID x = 0; x < _image.width(); ++x)
+        {
+            for(SiteID y = 0; y < _image.height(); ++y)
+            {
+                auto imgColor = QColor::fromRgb(_image.pixel(x, y));
+                auto siteId = y * _image.width() + x;
+                for(LabelID l = 0; l < _colorCatalog.size(); ++l)
+                {
+                    auto& catalogColor = _colorCatalog.entryAt(static_cast<size_t>(l));
+                    dataCost[siteId * _colorCatalog.size() + l] = ColorDiff(imgColor, catalogColor);
+                }
+            }
+        }
+    return dataCost;
 }
