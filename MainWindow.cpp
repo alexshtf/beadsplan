@@ -1,9 +1,10 @@
 #include "MainWindow.h"
 #include "gco/GCoptimization.h"
 
+#include <QtGui/QWheelEvent>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/qmessagebox.h>
-#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsSceneWheelEvent>
 #include <QtWidgets/QGraphicsPixmapItem>
 
 namespace
@@ -25,6 +26,9 @@ namespace
 
     using SiteID = GCoptimization::SiteID;
     using LabelID = GCoptimization::LabelID ;
+
+    constexpr double ZOOM_FACTOR = 1.1;
+    constexpr double WHEEL_DELTA_FACTOR = 120.0;
 }
 
 
@@ -33,7 +37,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
     _ui.setupUi(this);
     _ui.imgView->setScene(_imgScene = new QGraphicsScene());
+    _ui.imgView->viewport()->installEventFilter(this);
+
     _ui.planView->setScene(_planScene = new QGraphicsScene());
+    _ui.planView->viewport()->installEventFilter(this);
 
     connect(_ui.openImageButton, &QPushButton::pressed, [&] { LoadImage(); });
     connect(_ui.generatePlanButton, &QPushButton::pressed, [&] { GeneratePlan(); });
@@ -110,4 +117,27 @@ std::unique_ptr<double[]> MainWindow::getDataCost()
         }
     }
     return dataCost;
+}
+
+bool MainWindow::eventFilter(QObject *object, QEvent *event)
+{
+    auto gfxView = qobject_cast<QGraphicsView*>(object->parent());
+    if (event->type() == QEvent::Wheel)
+    {
+        auto wheelEvent = dynamic_cast<QWheelEvent*>(event);
+        auto scale = std::pow(ZOOM_FACTOR, wheelEvent->angleDelta().y() / WHEEL_DELTA_FACTOR);
+
+        gfxView->scale(scale, scale);
+        return true;
+    }
+    if (event->type() == QEvent::GraphicsSceneWheel)
+    {
+        auto wheelEvent = dynamic_cast<QGraphicsSceneWheelEvent*>(event);
+        auto scale = std::pow(ZOOM_FACTOR, wheelEvent->delta() / WHEEL_DELTA_FACTOR);
+
+        gfxView->scale(scale, scale);
+        return true;
+    }
+
+    return QObject::eventFilter(object, event);
 }

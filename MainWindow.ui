@@ -78,10 +78,42 @@
       <widget class="QWidget" name="verticalLayoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QGraphicsView" name="imgView"/>
+         <widget class="QGraphicsView" name="imgView">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <property name="renderHints">
+           <set>QPainter::Antialiasing|QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
+          </property>
+          <property name="dragMode">
+           <enum>QGraphicsView::ScrollHandDrag</enum>
+          </property>
+          <property name="transformationAnchor">
+           <enum>QGraphicsView::AnchorUnderMouse</enum>
+          </property>
+         </widget>
         </item>
         <item>
-         <widget class="QGraphicsView" name="planView"/>
+         <widget class="QGraphicsView" name="planView">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+          <property name="renderHints">
+           <set>QPainter::Antialiasing|QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
+          </property>
+          <property name="dragMode">
+           <enum>QGraphicsView::ScrollHandDrag</enum>
+          </property>
+          <property name="transformationAnchor">
+           <enum>QGraphicsView::AnchorUnderMouse</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

@@ -10,6 +10,10 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
+
+    virtual bool eventFilter(QObject *object, QEvent *qEvent) override;
+
+public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
