@@ -5,6 +5,7 @@
 #include "ui_MainWindow.h"
 #include "ColorCatalog.h"
 #include <memory>
+#include <QtWidgets/qtablewidget.h>
 
 class MainWindow : public QMainWindow
 {
@@ -28,6 +29,7 @@ private:
     class QGraphicsScene* _planScene;
     std::unique_ptr<class QGraphicsPixmapItem> _planPixmapItem;
 
+    void DisplayColorCatalog(class QTableWidget *table);
     void GeneratePlan();
     void LoadImage();
     std::unique_ptr<double[]> getDataCost();

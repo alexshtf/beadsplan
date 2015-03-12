@@ -1,11 +1,15 @@
 #include "MainWindow.h"
 #include "gco/GCoptimization.h"
+#include "../../.clion10/system/cmake/generated/168ea010/168ea010/Release/ui_MainWindow.h"
 
 #include <QtGui/QWheelEvent>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/qmessagebox.h>
 #include <QtWidgets/QGraphicsSceneWheelEvent>
 #include <QtWidgets/QGraphicsPixmapItem>
+#include <QtWidgets/QTableWidget>
+
+#include <boost/numeric/conversion/cast.hpp>
 
 namespace
 {
@@ -25,7 +29,10 @@ namespace
     }
 
     using SiteID = GCoptimization::SiteID;
-    using LabelID = GCoptimization::LabelID ;
+    using LabelID = GCoptimization::LabelID;
+
+    template<typename T>
+    int AsInt(T x) { return boost::numeric_cast<int>(x); }
 
     constexpr double ZOOM_FACTOR = 1.1;
     constexpr double WHEEL_DELTA_FACTOR = 120.0;
@@ -36,11 +43,17 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     _ui.setupUi(this);
+
+    _ui.splitter->setStretchFactor(0, 0);
+    _ui.splitter->setStretchFactor(1, 1);
+
     _ui.imgView->setScene(_imgScene = new QGraphicsScene());
     _ui.imgView->viewport()->installEventFilter(this);
 
     _ui.planView->setScene(_planScene = new QGraphicsScene());
     _ui.planView->viewport()->installEventFilter(this);
+
+    DisplayColorCatalog(_ui.colorCatalogTable);
 
     connect(_ui.openImageButton, &QPushButton::pressed, [&] { LoadImage(); });
     connect(_ui.generatePlanButton, &QPushButton::pressed, [&] { GeneratePlan(); });
@@ -75,7 +88,7 @@ void MainWindow::GeneratePlan()
 
         auto dataCost = getDataCost();
         gridGraph.setDataCost(dataCost.get());
-        gridGraph.expansion();
+        gridGraph.swap(10);
         updatePlan(gridGraph);
     }
     catch(const GCException& e)
@@ -140,4 +153,24 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
     }
 
     return QObject::eventFilter(object, event);
+}
+
+void MainWindow::DisplayColorCatalog(QTableWidget *table)
+{
+    table->setRowCount(AsInt(_colorCatalog.size()));
+
+    for(size_t i = 0; i < _colorCatalog.size(); ++i)
+    {
+        auto& entry = _colorCatalog.entryAt(i);
+
+        std::unique_ptr<QTableWidgetItem> nameItem(new QTableWidgetItem);
+        nameItem->setText(QString::fromStdString(entry.name));
+
+        std::unique_ptr<QTableWidgetItem> colorItem(new QTableWidgetItem);
+        colorItem->setText(QString("%1 %2 %3").arg(entry.r).arg(entry.g).arg(entry.b));
+        colorItem->setBackground(QBrush(QColor::fromRgb(entry.r, entry.g, entry.b)));
+
+        table->setItem(AsInt(i), 0, nameItem.release());
+        table->setItem(AsInt(i), 1, colorItem.release());
+    }
 }
