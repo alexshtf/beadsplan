@@ -1,13 +1,11 @@
 #include "MainWindow.h"
 #include "gco/GCoptimization.h"
-#include "../../.clion10/system/cmake/generated/168ea010/168ea010/Release/ui_MainWindow.h"
 
 #include <QtGui/QWheelEvent>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/qmessagebox.h>
 #include <QtWidgets/QGraphicsSceneWheelEvent>
 #include <QtWidgets/QGraphicsPixmapItem>
-#include <QtWidgets/QTableWidget>
 
 #include <boost/numeric/conversion/cast.hpp>
 
