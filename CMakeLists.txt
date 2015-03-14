@@ -4,8 +4,7 @@ find_package(Qt5Widgets)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DGCO_ENERGYTYPE=double)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 file(GLOB gco_cpp gco/*.h)
 file(GLOB gco_headers gco/*.cpp)

@@ -12,6 +12,7 @@ public:
         int r, g, b;
 
         Entry() = default;
+        Entry(const Entry&) = default;
         Entry(std::string name, int r, int g, int b);
     };
 

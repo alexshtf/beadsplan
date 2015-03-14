@@ -6,6 +6,7 @@
 #include "ColorCatalog.h"
 #include <memory>
 #include <QtWidgets/qtablewidget.h>
+#include <gco/GCoptimization.h>
 
 class MainWindow : public QMainWindow
 {
@@ -32,7 +33,7 @@ private:
     void DisplayColorCatalog(class QTableWidget *table);
     void GeneratePlan();
     void LoadImage();
-    std::unique_ptr<double[]> getDataCost();
+    std::unique_ptr<double[]> getDataCost(const QImage& planImage);
 
-    void updatePlan(const class GCoptimizationGridGraph & gridGraph);
+    void updatePlan(const QImage &planImage, const class GCoptimizationGridGraph &gridGraph);
 };
