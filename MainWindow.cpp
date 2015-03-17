@@ -81,12 +81,7 @@ void MainWindow::LoadImage()
         if (_image.load(imageFile))
         {
             _imgPixmapItem.reset(_imgScene->addPixmap(QPixmap::fromImage(_image)));
-            if (_ui.keepAspectRatioCheckBox->isChecked())
-            {
-                auto aspectRatio = _image.width() / static_cast<double>(_image.height());
-                auto columns = _ui.rowsSpinBox->value() * aspectRatio;
-                _ui.columnsSpinBox->setValue(static_cast<int>(columns));
-            }
+            UpdateColumnsFromRows();
         }
         else
             QMessageBox::warning(this, tr("Cannot open image"), imageFile);
