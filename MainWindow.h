@@ -35,5 +35,5 @@ private:
     void LoadImage();
     std::unique_ptr<double[]> getDataCost(const QImage& planImage);
 
-    void updatePlan(const QImage &planImage, const class GCoptimizationGridGraph &gridGraph);
+    void updatePlan(const class GCoptimizationGridGraph &gridGraph, int planWidth, int planHeight);
 };

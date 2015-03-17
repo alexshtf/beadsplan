@@ -1,8 +1,9 @@
 #include "MainWindow.h"
 #include "gco/GCoptimization.h"
-#include "../../.clion10/system/cmake/generated/168ea010/168ea010/Release/ui_MainWindow.h"
 
 #include <QtGui/QWheelEvent>
+#include <QtGui/QPicture>
+#include <QtGui/QPainter>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/qmessagebox.h>
 #include <QtWidgets/QGraphicsSceneWheelEvent>
@@ -40,6 +41,7 @@ namespace
 
     constexpr double ZOOM_FACTOR = 1.1;
     constexpr double WHEEL_DELTA_FACTOR = 120.0;
+    constexpr double PLAN_CELL_SIZE = 10;
 }
 
 
@@ -82,19 +84,21 @@ void MainWindow::LoadImage()
 
 void MainWindow::GeneratePlan()
 {
-    auto planImage = _image.scaled(_ui.columnsSpinBox->value(), _ui.rowsSpinBox->value(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    auto planWidth = _ui.columnsSpinBox->value();
+    auto planHeight = _ui.rowsSpinBox->value();
+    auto planImage = _image.scaled(planWidth, planHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     try
     {
         GCoptimizationGridGraph gridGraph(
-            static_cast<SiteID>(planImage.width()),
-            static_cast<SiteID>(planImage.height()),
+            static_cast<SiteID>(planWidth),
+            static_cast<SiteID>(planHeight),
             static_cast<LabelID>(_colorCatalog.size())
         );
 
         auto dataCost = getDataCost(planImage);
         gridGraph.setDataCost(dataCost.get());
         gridGraph.expansion(100);
-        updatePlan(planImage, gridGraph);
+        updatePlan(gridGraph, planWidth, planHeight);
     }
     catch(const GCException& e)
     {
@@ -102,22 +106,30 @@ void MainWindow::GeneratePlan()
     }
 }
 
-void MainWindow::updatePlan(const QImage &planImage, const class GCoptimizationGridGraph &gridGraph)
+void MainWindow::updatePlan(const class GCoptimizationGridGraph &gridGraph, int planWidth, int planHeight)
 {
-    QImage displayedPlan = planImage;
-    for(SiteID x = 0; x < displayedPlan.width(); ++x)
+    auto xRatio = PLAN_CELL_SIZE;
+    auto yRatio = PLAN_CELL_SIZE;
+
+    QPixmap displayedPlan(static_cast<int>(xRatio * planWidth), static_cast<int>(yRatio * planHeight));
+    QPainter painter(&displayedPlan);
+
+    painter.setPen(Qt::black);
+    for(SiteID x = 0; x < planWidth; ++x)
         {
-            for(SiteID y = 0; y < displayedPlan.height(); ++y)
+            for(SiteID y = 0; y < planHeight; ++y)
             {
-                auto id = y * displayedPlan.width() + x;
+                auto id = y * planWidth + x;
                 auto label = gridGraph.whatLabel(id);
-                auto& color = _colorCatalog.entryAt(static_cast<size_t>(label));
-                displayedPlan.setPixel(x, y, qRgb(color.r, color.g, color.b));
+                auto& entry = _colorCatalog.entryAt(static_cast<size_t>(label));
+
+                painter.setBrush(QColor::fromRgb(entry.r, entry.g, entry.b));
+                painter.drawRect(QRectF(x * xRatio, y * yRatio, xRatio, yRatio));
             }
         }
 
-    displayedPlan = displayedPlan.scaled(_image.width(), _image.height());
-    _planPixmapItem.reset(_planScene->addPixmap(QPixmap::fromImage(displayedPlan)));
+    _planPixmapItem.reset(_planScene->addPixmap(displayedPlan));
+    _planPixmapItem->setTransformationMode(Qt::SmoothTransformation);
 }
 
 std::unique_ptr<double[]> MainWindow::getDataCost(const QImage& planImage)
