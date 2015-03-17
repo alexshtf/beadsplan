@@ -30,6 +30,9 @@ private:
     class QGraphicsScene* _planScene;
     std::unique_ptr<class QGraphicsPixmapItem> _planPixmapItem;
 
+    void UpdateRowsFromColumns();
+    void UpdateColumnsFromRows();
+
     void DisplayColorCatalog(class QTableWidget *table);
     void GeneratePlan();
     void LoadImage();

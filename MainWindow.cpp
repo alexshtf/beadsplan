@@ -1,9 +1,10 @@
 #include "MainWindow.h"
 #include "gco/GCoptimization.h"
+#include "../../.clion10/system/cmake/generated/168ea010/168ea010/Release/ui_MainWindow.h"
 
 #include <QtGui/QWheelEvent>
 #include <QtGui/QPicture>
-#include <QtGui/QPainter>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/qmessagebox.h>
 #include <QtWidgets/QGraphicsSceneWheelEvent>
@@ -41,7 +42,7 @@ namespace
 
     constexpr double ZOOM_FACTOR = 1.1;
     constexpr double WHEEL_DELTA_FACTOR = 120.0;
-    constexpr double PLAN_CELL_SIZE = 10;
+    constexpr double PLAN_DISPLAY_CELL_SIZE = 10;
 }
 
 
@@ -63,6 +64,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(_ui.openImageButton, &QPushButton::pressed, [&] { LoadImage(); });
     connect(_ui.generatePlanButton, &QPushButton::pressed, [&] { GeneratePlan(); });
+    connect(_ui.columnsSpinBox, &QSpinBox::editingFinished, [&] { UpdateRowsFromColumns(); });
+    connect(_ui.rowsSpinBox, &QSpinBox::editingFinished, [&] { UpdateColumnsFromRows(); });
 }
 
 MainWindow::~MainWindow()
@@ -76,7 +79,15 @@ void MainWindow::LoadImage()
     {
         _image = QImage();
         if (_image.load(imageFile))
+        {
             _imgPixmapItem.reset(_imgScene->addPixmap(QPixmap::fromImage(_image)));
+            if (_ui.keepAspectRatioCheckBox->isChecked())
+            {
+                auto aspectRatio = _image.width() / static_cast<double>(_image.height());
+                auto columns = _ui.rowsSpinBox->value() * aspectRatio;
+                _ui.columnsSpinBox->setValue(static_cast<int>(columns));
+            }
+        }
         else
             QMessageBox::warning(this, tr("Cannot open image"), imageFile);
     }
@@ -108,8 +119,8 @@ void MainWindow::GeneratePlan()
 
 void MainWindow::updatePlan(const class GCoptimizationGridGraph &gridGraph, int planWidth, int planHeight)
 {
-    auto xRatio = PLAN_CELL_SIZE;
-    auto yRatio = PLAN_CELL_SIZE;
+    auto xRatio = PLAN_DISPLAY_CELL_SIZE;
+    auto yRatio = PLAN_DISPLAY_CELL_SIZE;
 
     QPixmap displayedPlan(static_cast<int>(xRatio * planWidth), static_cast<int>(yRatio * planHeight));
     QPainter painter(&displayedPlan);
@@ -195,4 +206,29 @@ void MainWindow::DisplayColorCatalog(QTableWidget *table)
         table->setItem(AsInt(i), 0, nameItem.release());
         table->setItem(AsInt(i), 1, colorItem.release());
     }
+}
+
+
+void MainWindow::UpdateRowsFromColumns()
+{
+    if (_image.isNull())
+        return;
+
+    if (!_ui.keepAspectRatioCheckBox->isChecked())
+        return;
+
+    auto ratio = _image.width() / static_cast<double>(_image.height());
+    _ui.rowsSpinBox->setValue(static_cast<int>(std::round(_ui.columnsSpinBox->value() / ratio)));
+}
+
+void MainWindow::UpdateColumnsFromRows()
+{
+    if (_image.isNull())
+        return;
+
+    if (!_ui.keepAspectRatioCheckBox->isChecked())
+        return;
+
+    auto ratio = _image.width() / static_cast<double>(_image.height());
+    _ui.columnsSpinBox->setValue(static_cast<int>(std::round(_ui.rowsSpinBox->value() * ratio)));
 }
