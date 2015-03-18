@@ -15,6 +15,8 @@
 namespace
 {
     double sqr(double x) { return x * x; }
+    double ratio(double x, double y) { return x / y; }
+    int roundInt(double x) { return static_cast<int>(std::round(x)); }
 
     void toYUV(double r, double g, double b, double& y, double& u, double& v)
     {
@@ -32,6 +34,35 @@ namespace
         toYUV(right.r, right.g, right.b, r[0], r[1], r[2]);
 
         return (fabs(l[0] - r[0]) + fabs(l[1] - r[1]) + fabs(l[2] - r[2])) / 255;
+    }
+
+    QColor GetAverageColor(const QImage& img, int x, int y, int w, int h)
+    {
+        double
+            avgR = 0,
+            avgG = 0,
+            avgB = 0;
+        for(int dx = 0; dx < w; ++dx)
+        {
+            for(int dy = 0; dy < h; ++dy)
+            {
+                if (x + dx >= img.width())
+                    continue;
+                if (y + dy >= img.height())
+                    continue;
+
+                auto c = QColor::fromRgb(img.pixel(x + dx, y + dy));
+                avgR += c.red();
+                avgG += c.green();
+                avgB += c.blue();
+            }
+        }
+
+        avgR /= w * h;
+        avgG /= w * h;
+        avgB /= w * h;
+
+        return QColor::fromRgb(static_cast<int>(avgR), static_cast<int>(avgG), static_cast<int>(avgB));
     }
 
     using SiteID = GCoptimization::SiteID;
@@ -92,7 +123,6 @@ void MainWindow::GeneratePlan()
 {
     auto planWidth = _ui.columnsSpinBox->value();
     auto planHeight = _ui.rowsSpinBox->value();
-    auto planImage = _image.scaled(planWidth, planHeight, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     try
     {
         GCoptimizationGridGraph gridGraph(
@@ -101,7 +131,7 @@ void MainWindow::GeneratePlan()
             static_cast<LabelID>(_colorCatalog.size())
         );
 
-        auto dataCost = getDataCost(planImage);
+        auto dataCost = getDataCost(_image, planWidth, planHeight);
         gridGraph.setDataCost(dataCost.get());
         gridGraph.expansion(100);
         updatePlan(gridGraph, planWidth, planHeight);
@@ -138,17 +168,20 @@ void MainWindow::updatePlan(const class GCoptimizationGridGraph &gridGraph, int 
     _planPixmapItem->setTransformationMode(Qt::SmoothTransformation);
 }
 
-std::unique_ptr<double[]> MainWindow::getDataCost(const QImage& planImage)
+std::unique_ptr<double[]> MainWindow::getDataCost(const QImage &planImage, int planWidth, int planHeight)
 {
-    auto size = planImage.width() * planImage.height() * _colorCatalog.size();
+    auto size = planWidth * planHeight * _colorCatalog.size();
     std::unique_ptr<double[]> dataCost(new double[size]);
 
-    for(SiteID x = 0; x < planImage.width(); ++x)
+    auto dX = ratio(planImage.width(), planWidth);
+    auto dY = ratio(planImage.height(), planHeight);
+
+    for(SiteID x = 0; x < planWidth; ++x)
     {
-        for(SiteID y = 0; y < planImage.height(); ++y)
+        for(SiteID y = 0; y < planHeight; ++y)
         {
-            auto imgColor = QColor::fromRgb(planImage.pixel(x, y));
-            auto siteId = y * planImage.width() + x;
+            auto imgColor = GetAverageColor(planImage, roundInt(x * dX), roundInt(y * dY), roundInt(dX), roundInt(dY));
+            auto siteId = y * planWidth + x;
             for(LabelID l = 0; l < _colorCatalog.size(); ++l)
             {
                 auto& catalogColor = _colorCatalog.entryAt(static_cast<size_t>(l));
