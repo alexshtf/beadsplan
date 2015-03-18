@@ -65,6 +65,25 @@ namespace
         return QColor::fromRgb(static_cast<int>(avgR), static_cast<int>(avgG), static_cast<int>(avgB));
     }
 
+    struct DataCostHelper
+    {
+    private:
+        const QImage& _img;
+        int _blockW;
+        int _blockH;
+    public:
+        DataCostHelper(const QImage& img, int blockW, int blockH)
+            : _img(img), _blockW(blockW), _blockH(blockH)
+        {
+        }
+
+        double GetCost(int x, int y, const ColorCatalog::Entry& entry)
+        {
+            auto avgColor = GetAverageColor(_img, x, y, _blockW, _blockH);
+            return ColorDiff(avgColor, entry);
+        }
+    };
+
     using SiteID = GCoptimization::SiteID;
     using LabelID = GCoptimization::LabelID;
 
@@ -131,7 +150,7 @@ void MainWindow::GeneratePlan()
             static_cast<LabelID>(_colorCatalog.size())
         );
 
-        auto dataCost = getDataCost(_image, planWidth, planHeight);
+        auto dataCost = GetDataCost(_image, planWidth, planHeight);
         gridGraph.setDataCost(dataCost.get());
         gridGraph.expansion(100);
         updatePlan(gridGraph, planWidth, planHeight);
@@ -168,24 +187,24 @@ void MainWindow::updatePlan(const class GCoptimizationGridGraph &gridGraph, int 
     _planPixmapItem->setTransformationMode(Qt::SmoothTransformation);
 }
 
-std::unique_ptr<double[]> MainWindow::getDataCost(const QImage &planImage, int planWidth, int planHeight)
+std::unique_ptr<double[]> MainWindow::GetDataCost(const QImage &planImage, int planWidth, int planHeight)
 {
     auto size = planWidth * planHeight * _colorCatalog.size();
     std::unique_ptr<double[]> dataCost(new double[size]);
 
     auto dX = ratio(planImage.width(), planWidth);
     auto dY = ratio(planImage.height(), planHeight);
+    DataCostHelper helper(planImage, roundInt(dX), roundInt(dY));
 
     for(SiteID x = 0; x < planWidth; ++x)
     {
         for(SiteID y = 0; y < planHeight; ++y)
         {
-            auto imgColor = GetAverageColor(planImage, roundInt(x * dX), roundInt(y * dY), roundInt(dX), roundInt(dY));
             auto siteId = y * planWidth + x;
             for(LabelID l = 0; l < _colorCatalog.size(); ++l)
             {
                 auto& catalogColor = _colorCatalog.entryAt(static_cast<size_t>(l));
-                dataCost[siteId * _colorCatalog.size() + l] = 64 * ColorDiff(imgColor, catalogColor);
+                dataCost[siteId * _colorCatalog.size() + l] = 64 * helper.GetCost(roundInt(x * dX), roundInt(y * dY), catalogColor);
             }
         }
     }

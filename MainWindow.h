@@ -36,7 +36,7 @@ private:
     void DisplayColorCatalog(class QTableWidget *table);
     void GeneratePlan();
     void LoadImage();
-    std::unique_ptr<double[]> getDataCost(const QImage &planImage, int planWidth, int planHeight);
+    std::unique_ptr<double[]> GetDataCost(const QImage &planImage, int planWidth, int planHeight);
 
     void updatePlan(const class GCoptimizationGridGraph &gridGraph, int planWidth, int planHeight);
 };
